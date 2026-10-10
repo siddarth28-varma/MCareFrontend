@@ -11,10 +11,15 @@ const emptyData = { doctors: [], appointments: [], patients: [], summary: {}, pr
 
 export default function App() {
   const [user, setUser] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('medicare-user')) || null; }
+    if (!api.hasToken()) {
+      localStorage.removeItem('medicare-user');
+      sessionStorage.removeItem('medicare-user');
+      return null;
+    }
+    try { return JSON.parse(sessionStorage.getItem('medicare-user')) || null; }
     catch { return null; }
   });
-  const [view, setView] = useState(() => localStorage.getItem('medicare-user') ? 'dashboard' : 'home');
+  const [view, setView] = useState(() => api.hasToken() && sessionStorage.getItem('medicare-user') ? 'dashboard' : 'home');
   const [data, setData] = useState(emptyData);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [consultation, setConsultation] = useState(null);
@@ -37,12 +42,12 @@ export default function App() {
         profile = await api.patientForUser(activeUser.id);
         appointments = await api.patientAppointments(profile.id);
         activeUser.profileId = profile.id;
-        localStorage.setItem('medicare-user', JSON.stringify(activeUser));
+        sessionStorage.setItem('medicare-user', JSON.stringify(activeUser));
       } else if (activeUser.role === 'DOCTOR') {
         profile = await api.doctorForUser(activeUser.id);
         appointments = await api.doctorAppointments(profile.id);
         activeUser.profileId = profile.id;
-        localStorage.setItem('medicare-user', JSON.stringify(activeUser));
+        sessionStorage.setItem('medicare-user', JSON.stringify(activeUser));
       } else {
         [appointments, patients, summary] = await Promise.all([api.appointments(), api.patients(), api.summary()]);
       }
@@ -54,13 +59,27 @@ export default function App() {
 
   useEffect(() => { if (user) refresh(user); }, [user, refresh]);
 
+  useEffect(() => {
+    function expireSession() {
+      api.clearToken();
+      sessionStorage.removeItem('medicare-user');
+      setUser(null);
+      setData(emptyData);
+      setView('login');
+      setAuthError('Your session expired. Please sign in again.');
+    }
+    window.addEventListener('medicare-session-expired', expireSession);
+    return () => window.removeEventListener('medicare-session-expired', expireSession);
+  }, []);
+
   async function login(event) {
     event.preventDefault(); setLoading(true); setAuthError('');
     const form = new FormData(event.currentTarget);
     try {
       const loggedIn = await api.login({ email: form.get('email'), password: form.get('password') });
-      localStorage.setItem('medicare-user', JSON.stringify(loggedIn));
-      setUser(loggedIn); setView('dashboard');
+      api.setToken(loggedIn.token);
+      sessionStorage.setItem('medicare-user', JSON.stringify(loggedIn.user));
+      setUser(loggedIn.user); setView('dashboard');
     } catch (error) { setAuthError(error.message); }
     finally { setLoading(false); }
   }
@@ -72,14 +91,15 @@ export default function App() {
     try {
       const created = await api.register(payload);
       const loggedIn = await api.login({ email: created.email, password: payload.password });
-      localStorage.setItem('medicare-user', JSON.stringify(loggedIn));
-      setUser(loggedIn); setView('dashboard');
+      api.setToken(loggedIn.token);
+      sessionStorage.setItem('medicare-user', JSON.stringify(loggedIn.user));
+      setUser(loggedIn.user); setView('dashboard');
     } catch (error) { setAuthError(error.message); }
     finally { setLoading(false); }
   }
 
   function logout() {
-    localStorage.removeItem('medicare-user'); setUser(null); setData(emptyData); setView('home'); setGlobalError('');
+    api.clearToken(); sessionStorage.removeItem('medicare-user'); setUser(null); setData(emptyData); setView('home'); setGlobalError('');
   }
 
   function bookDoctor(doctor) { setSelectedDoctor(doctor); setView('book'); }

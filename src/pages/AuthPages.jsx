@@ -27,7 +27,7 @@ export function LoginPage({ onSubmit, onBack, error, loading }) {
     <form className="form-stack" onSubmit={onSubmit}>
       <label>Email address<input name="email" type="email" placeholder="you@example.com" required autoComplete="email" /></label>
       <label>Password<input name="password" type="password" placeholder="Enter your password" required autoComplete="current-password" /></label>
-      <p className="form-hint">Demo accounts are listed in the project README.</p>
+      <p className="form-hint">Sign in with the credentials provided for your account.</p>
       {error && <div className="inline-error">{error}</div>}
       <button className="button button-dark button-wide" disabled={loading}>{loading ? 'Signing in…' : 'Sign in'} <ArrowRight size={16} /></button>
     </form>
@@ -41,7 +41,7 @@ export function RegisterPage({ onSubmit, onBack, error, loading }) {
       <label>Full name<input name="name" placeholder="e.g. Asha Kumar" required autoComplete="name" /></label>
       <label>Email address<input name="email" type="email" placeholder="you@example.com" required autoComplete="email" /></label>
       <div className="form-row"><label>Phone<input name="phone" type="tel" placeholder="Phone number" /></label><label>Date of birth<input name="dateOfBirth" type="date" /></label></div>
-      <label>Password<input name="password" type="password" minLength="6" placeholder="At least 6 characters" required autoComplete="new-password" /></label>
+      <label>Password<input name="password" type="password" minLength="12" maxLength="72" placeholder="At least 12 characters" required autoComplete="new-password" /></label>
       <label>Gender<select name="gender" defaultValue=""><option value="">Prefer not to say</option><option>Female</option><option>Male</option><option>Other</option></select></label>
       {error && <div className="inline-error">{error}</div>}
       <button className="button button-dark button-wide" disabled={loading}>{loading ? 'Creating account…' : 'Create patient account'} <ArrowRight size={16} /></button>

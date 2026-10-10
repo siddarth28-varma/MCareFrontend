@@ -1,11 +1,17 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const TOKEN_KEY = 'medicare-token';
 
 async function request(path, options = {}) {
+  const token = sessionStorage.getItem(TOKEN_KEY);
   let response;
   try {
     response = await fetch(`${API_BASE}${path}`, {
       ...options,
-      headers: { 'Content-Type': 'application/json', ...options.headers },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options.headers,
+      },
     });
   } catch (error) {
     if (error instanceof TypeError) {
@@ -14,6 +20,10 @@ async function request(path, options = {}) {
     throw error;
   }
   if (!response.ok) {
+    if (response.status === 401 && token) {
+      sessionStorage.removeItem(TOKEN_KEY);
+      window.dispatchEvent(new Event('medicare-session-expired'));
+    }
     const payload = await response.json().catch(() => ({}));
     throw new Error(payload.detail || payload.message || `Request failed (${response.status})`);
   }
@@ -24,6 +34,9 @@ async function request(path, options = {}) {
 const json = (method, body) => ({ method, body: JSON.stringify(body) });
 
 export const api = {
+  hasToken: () => Boolean(sessionStorage.getItem(TOKEN_KEY)),
+  setToken: (token) => sessionStorage.setItem(TOKEN_KEY, token),
+  clearToken: () => sessionStorage.removeItem(TOKEN_KEY),
   login: (data) => request('/auth/login', json('POST', data)),
   register: (data) => request('/auth/register', json('POST', data)),
   doctors: (specialization = '') => request(`/doctors${specialization ? `?specialization=${encodeURIComponent(specialization)}` : ''}`),
