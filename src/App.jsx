@@ -39,7 +39,7 @@ export default function App() {
       let patients = [];
       let summary = {};
       if (activeUser.role === 'PATIENT') {
-        profile = await api.patientForUser(activeUser.id);
+        profile = await api.currentPatient();
         appointments = await api.patientAppointments(profile.id);
         activeUser.profileId = profile.id;
         sessionStorage.setItem('medicare-user', JSON.stringify(activeUser));

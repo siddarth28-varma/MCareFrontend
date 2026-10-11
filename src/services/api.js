@@ -43,6 +43,7 @@ export const api = {
   doctor: (id) => request(`/doctors/${id}`),
   doctorForUser: (id) => request(`/doctors/by-user/${id}`),
   patientForUser: (id) => request(`/patients/by-user/${id}`),
+  currentPatient: () => request('/patients/me'),
   patient: (id) => request(`/patients/${id}`),
   patients: () => request('/patients'),
   updatePatient: (id, data) => request(`/patients/${id}`, json('PUT', data)),
