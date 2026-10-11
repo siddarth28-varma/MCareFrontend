@@ -2,6 +2,9 @@
   command = "npm run build"
   publish = "dist"
 
+[build.environment]
+  VITE_API_BASE_URL = "https://two4eg107f09-backend.onrender.com/api"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
